@@ -1115,6 +1115,382 @@ Search `LAPS` in the included credentialed-enumeration and misconfiguration mate
 - New access triggers credential hunting, local privilege escalation, lateral movement checks, and evidence preservation.
 """
 
+REPORTING_QUICK = r"""
+============================================================
+# [0. START BEFORE ENUMERATION]
+============================================================
+
+The report begins when testing begins—not after root, SYSTEM, or domain compromise. Before touching the target, record scope and create the evidence structure taught by CPTS:
+
+```bash
+mkdir -p ACME-IPT/{Admin,Deliverables,Evidence/{Findings,Scans/{Vuln,Service,Web,'AD Enumeration'},Notes,OSINT,Wireless,'Logging output','Misc Files'},Retest}
+```
+
+For a lab/exam, replace `ACME-IPT` with the machine or engagement name. Keep at minimum:
+
+```text
+Admin/
+  scope.md
+Deliverables/
+  report.md
+Evidence/
+  Findings/<finding-name>/
+  Scans/Service/
+  Scans/Web/
+  Scans/AD Enumeration/
+  Notes/
+  Logging output/
+  Misc Files/
+  activity-log.tsv
+  payload-log.tsv
+  credential-matrix.tsv
+  target-matrix.tsv
+```
+
+> **CPTS exam note:** this runbook reflects the reporting methodology taught in the local CPTS modules. It does not replace the current exam portal instructions, required report template, submission format, deadline, or evidence rules. Read the instructions supplied with your exam before testing and again before submission.
+
+============================================================
+# [1. LIVE MACHINE NOTE TEMPLATE]
+============================================================
+
+Create one note per target and update it continuously:
+
+```markdown
+# TARGET — IP / hostname
+
+## Scope and access
+- IP/URL:
+- Hostname/domain:
+- Starting credentials/access:
+- VPN/pivot/interface:
+- Restrictions or safety limits:
+
+## Initial enumeration
+- Open ports and services:
+- Web virtual hosts/URLs:
+- Users/groups/domains:
+- Interesting versions/configurations:
+
+## Credential matrix
+| Account | Secret type | Source | Tested against | Result |
+|---|---|---|---|---|
+
+## Attack timeline
+| Time | Source host | Target | Command/action | Result | Evidence |
+|---|---|---|---|---|---|
+
+## Finding candidates
+### Candidate title
+- Condition:
+- Impact:
+- Affected asset:
+- Reproduction notes:
+- Evidence files:
+- Remediation idea:
+
+## Shells and privilege changes
+| Time | Host | User/context | Method | Evidence |
+|---|---|---|---|---|
+
+## Artifacts and modifications
+| Time | Host | Path/account/setting | Hash/value | Cleanup status |
+|---|---|---|---|---|
+
+## Failed attempts and dead ends
+- What was tested:
+- Exact error/output:
+- Why it likely failed:
+- What was ruled out / next test:
+
+## Flags/objectives
+- User proof:
+- Root/admin proof:
+
+## Cleanup
+- Removed/reverted:
+- Could not remove/revert:
+- Verification:
+```
+
+Why record failed attempts? CPTS emphasizes that they support event correlation, demonstrate coverage when few findings exist, prevent repeated work, and help explain what was tested.
+
+============================================================
+# [2. ACTIVITY / PAYLOAD / CREDENTIAL LOGS]
+============================================================
+
+`activity-log.tsv`:
+
+```text
+Timestamp\tSource\tTarget\tAction/Command\tResult\tEvidencePath
+```
+
+`payload-log.tsv`:
+
+```text
+Timestamp\tTarget\tLocalFile\tSHA256\tRemotePath\tPurpose\tCleanupStatus
+```
+
+Hash every uploaded payload/tool from the attacker host:
+
+```bash
+sha256sum FILE
+```
+
+`credential-matrix.tsv`:
+
+```text
+Account\tDomain/Host\tSecretType\tSecretOrRedactedReference\tSource\tValidatedService\tResult
+```
+
+Do not scatter secrets across screenshots and prose. Store them according to the applicable lab/client data policy, redact report copies, and retain enough context to reproduce the authentication step.
+
+============================================================
+# [3. WHAT EVIDENCE TO CAPTURE]
+============================================================
+
+For every important step, capture:
+
+- The command/request and the target it addressed.
+- Enough output to show the condition and result—not an unexplained wall of text.
+- The current identity/context when privilege matters (`id`, `whoami`, `whoami /all`).
+- The affected IP, hostname, URL, account, parameter, object, file, or service.
+- A timestamp or corresponding activity-log entry.
+- Before/after state when the proof changes something.
+- A screenshot for visual/web evidence and raw text/tool output for reproducibility.
+- The filename/path of the saved evidence in the finding note.
+
+Evidence quality test:
+
+```text
+Can a technical reader who does not know this tool determine:
+1. what I targeted,
+2. what I sent or executed,
+3. what vulnerable condition was present,
+4. what output proves it,
+5. what access or impact resulted?
+```
+
+If any answer is “no,” capture another focused step before moving on.
+
+============================================================
+# [4. FINDING TEMPLATE]
+============================================================
+
+````markdown
+# Finding title
+
+## Severity
+Critical / High / Medium / Low / Informational
+
+## Affected systems
+- Host/IP/URL/component:
+- Account/role if relevant:
+
+## Description
+State the specific weakness observed in this environment. Name the platform,
+configuration, endpoint, permission, or behavior. Avoid generic stock text.
+
+## Impact
+Explain what an attacker can achieve and the business/technical consequence.
+Do not claim impact that was not demonstrated or supported by the condition.
+
+## Evidence and reproduction
+### Step 1 — Establish the prerequisite
+Command/request:
+```text
+...
+```
+Expected/observed result:
+
+### Step 2 — Trigger the vulnerable behavior
+Command/request:
+```text
+...
+```
+Expected/observed result:
+
+### Step 3 — Demonstrate impact
+Command/request:
+```text
+...
+```
+Expected/observed result:
+
+## Recommendation
+Give an actionable fix appropriate to this exact environment, plus validation
+steps where useful. Address root cause before compensating controls.
+
+## References
+- Authoritative vendor or standards reference directly relevant to the fix
+````
+
+Minimum CPTS finding content:
+
+- Description and affected platform.
+- Impact if unresolved.
+- Affected systems/networks/environments/applications.
+- Remediation recommendation.
+- Quality references.
+- Reproduction steps and collected evidence.
+
+Optional when applicable: CVE, OWASP/MITRE identifier, CVSS, ease/probability, and supporting context.
+
+============================================================
+# [5. REPRODUCTION STEPS TEST]
+============================================================
+
+Before considering a finding finished:
+
+1. Start from the access level stated in the prerequisite.
+2. Follow only the written steps—do not rely on memory or hidden setup.
+3. Confirm every command has its required host, port, domain, user, file, parameter, and input.
+4. Explain important flags and output where the reader may not know the tool.
+5. Place each significant step in its own figure/output block.
+6. Ensure screenshots are readable, focused, ordered, and referenced by the text.
+7. Show the proof of impact, not merely scanner detection or tool success text.
+8. Remove lab-only values and stale template language.
+
+```text
+Bad:  “Run sqlmap and obtain a shell.”
+Good: prerequisite → exact request/parameter → detection evidence → exact command
+      → relevant output → identity/impact verification
+```
+
+============================================================
+# [6. ATTACK CHAIN]
+============================================================
+
+Use an attack chain when several findings combine into greater impact:
+
+```markdown
+# Attack chain — initial access to objective
+
+## Summary
+Starting position, final impact, and why the combined path matters.
+
+## Chain
+1. Initial condition/finding → evidence → access gained
+2. New access → enumeration → credential or path discovered
+3. Lateral movement or privilege escalation → evidence
+4. Final objective/impact → evidence
+
+## Broken-chain recommendations
+- Fix A blocks step 1.
+- Fix B prevents credential/path reuse at step 2.
+- Fix C limits final impact even if earlier steps succeed.
+```
+
+Reuse focused evidence in individual findings, but keep each finding understandable on its own. The chain explains combined risk; it does not replace detailed reproduction.
+
+============================================================
+# [7. REPORT STRUCTURE]
+============================================================
+
+```text
+Cover / document control
+Table of contents
+Executive summary
+  - purpose and scope in business language
+  - overall security posture
+  - major attack paths and business impact
+  - prioritized themes, not tool output
+Attack chain(s)
+Summary of recommendations
+Findings
+  - consistent severity order and format
+Appendices
+  - scope
+  - methodology
+  - severity definitions
+  - exploitation attempts/payloads
+  - compromised credentials (handled securely)
+  - configuration/system changes and cleanup
+  - additional affected scope
+  - supporting enumeration or password analysis
+```
+
+The executive summary is for leadership. Findings and reproduction steps are for technical remediation teams. Do not paste technical walls of text into the executive summary or write findings so vaguely that engineers cannot reproduce them.
+
+============================================================
+# [8. REMEDIATION WRITING]
+============================================================
+
+For each recommendation:
+
+- Fix the root cause identified in the evidence.
+- Customize the recommendation to the affected technology and configuration.
+- State precisely what should change; avoid “apply best practices.”
+- Separate immediate containment from durable remediation when appropriate.
+- Include a way to validate the fix.
+- Use authoritative, directly relevant references.
+- Do not recommend a control that would not have stopped the demonstrated path.
+
+============================================================
+# [9. CLEANUP AND CLOSEOUT]
+============================================================
+
+Before leaving the machine/environment:
+
+- Review the payload and modification logs.
+- Remove uploaded tools, payloads, web shells, temporary files, created users, keys, tasks, services, rules, and configuration changes when authorized and safe.
+- Verify removal/reversion rather than assuming it succeeded.
+- Preserve the filename, remote path, hash, host, timestamp, purpose, and cleanup state even after deletion.
+- Clearly identify anything the tester could not clean up and provide client/manual cleanup steps.
+- Retain evidence according to the applicable retention and handling policy.
+
+Do not delete evidence or logs required for the report. Do not “clean up” client-owned data or unrelated artifacts.
+
+============================================================
+# [10. FINAL QA — REJECTION PREVENTION]
+============================================================
+
+Content:
+
+- [ ] Scope and tested assets are correct and consistent.
+- [ ] Every claimed compromise has readable evidence and the resulting identity/context.
+- [ ] Every finding includes description, impact, affected asset, reproduction, recommendation, and references.
+- [ ] Steps work from the stated prerequisite without hidden knowledge.
+- [ ] Severity matches demonstrated likelihood and impact; unsupported claims removed.
+- [ ] Attack chain connects the actual evidence and does not introduce unproven steps.
+- [ ] Failed attempts, artifacts, modifications, cleanup, and outstanding cleanup are documented.
+
+Accuracy:
+
+- [ ] IPs, ports, hostnames, domains, usernames, paths, URLs, commands, hashes, figure numbers, and finding IDs agree everywhere.
+- [ ] No unresolved placeholders such as `TARGET`, `TODO`, `<IP>`, sample company names, or template findings remain.
+- [ ] Credentials and sensitive values are redacted appropriately without destroying proof.
+- [ ] Commands are copied accurately; screenshots match their captions and surrounding text.
+
+Presentation:
+
+- [ ] Table of contents and internal links work.
+- [ ] Figures are legible at normal zoom, cropped to the relevant evidence, and ordered correctly.
+- [ ] Headings, severity labels, terminology, tense, capitalization, and formatting are consistent.
+- [ ] Spelling/grammar review completed; report opened in its final exported format.
+- [ ] A second review is performed if possible.
+
+Submission:
+
+- [ ] Current exam/engagement instructions re-read.
+- [ ] Required template, filename, format, objective/flag evidence, and submission method confirmed.
+- [ ] Final file opens successfully and is the intended version—not a stale draft.
+- [ ] Submission completed before the stated deadline and receipt/status confirmed where available.
+
+============================================================
+# [11. IF YOU ARE STUCK DURING A MACHINE]
+============================================================
+
+```text
+Stop → update target matrix → review raw logs → list what is proven vs assumed
+  → inspect failed attempts/errors → revisit each discovered service with credentials
+  → re-enumerate after every new user/privilege/network position
+  → check the relevant situation sheet’s final checklist
+  → preserve current evidence before risky changes
+```
+
+Do not spend hours repeating an unexplained exploit failure. Record the exact attempt and error, confirm prerequisites/version/architecture/permissions/network path, then move to another enumerated lead and return with better evidence.
+"""
+
 def build() -> dict:
     OUT.mkdir(exist_ok=True)
     common_exclude = r"^(Introduction|Intro)|Skills Assessment|Beyond this Module|Prevention$|Hardening$"
@@ -1159,6 +1535,11 @@ def build() -> dict:
         ("password-attacks", r"Pass the Hash|Pass the Ticket|Pass the Certificate|Active Directory and NTDS", None),
         ("windows-privilege-escalation", r"DPAPI|DnsAdmins|Server Operators|Print Operators|Event Log Readers", None),
     ])
+    reporting = items_for([
+        ("documentation--reporting", r"Notetaking|Types of Reports|Components of a Report|How to Write Up a Finding|Reporting Tips", None),
+        ("penetration-testing-process", r"Pre-Engagement|Post-Exploitation|Proof-of-Concept|Post-Engagement", None),
+        ("attacking-enterprise-networks", r"Engagement Closeout", None),
+    ])
 
     docs = {
         "LINUX_PRIVESC.md": render("Linux Privilege Escalation", "Start here after obtaining a Linux shell. Follow the order from situational awareness and credentials through configuration weaknesses, privileged execution, containers, and kernel checks.", LINUX_QUICK, LINUX_ROUTING, linux),
@@ -1168,14 +1549,20 @@ def build() -> dict:
         "SHELLS.md": render("Shells and Payloads", "Listeners, bind/reverse shells, payload generation, web shells, interactive-shell upgrades, and troubleshooting.", SHELLS_QUICK, "", shells),
         "FILE_TRANSFER.md": render("File Transfer", "Native and common-tool transfer methods for Linux and Windows, protected transfers, and integrity verification.", TRANSFER_QUICK, "", transfers),
         "AD.md": render("Active Directory Operational Workflow", "Domain discovery, credential validation, enumeration, roasting, ACLs, tickets, privileged access, trusts, and post-compromise workflows.", AD_QUICK, AD_ROUTING, ad),
+        "REPORTING.md": render("CPTS Documentation and Reporting Workflow", "Use this from the first enumeration command through final submission. It turns live notes, logs, evidence, attack paths, findings, cleanup, and QA into a reproducible report.", REPORTING_QUICK, "", reporting),
     }
     for name, content in docs.items():
         (OUT / name).write_text(content, encoding="utf-8")
 
+    source_sets = {
+        "LINUX_PRIVESC.md": linux, "WINDOWS_PRIVESC.md": windows, "WEB.md": web,
+        "PORTS.md": ports, "SHELLS.md": shells, "FILE_TRANSFER.md": transfers,
+        "AD.md": ad, "REPORTING.md": reporting,
+    }
     manifest = {
-        "files": {name: {"bytes": len(content.encode()), "source_sections": len({str(i.path) for i in vals})}
-                  for (name, content), vals in zip(docs.items(), [linux, windows, web, ports, shells, transfers, ad])},
-        "total_unique_source_sections": len({str(i.path) for vals in [linux, windows, web, ports, shells, transfers, ad] for i in vals}),
+        "files": {name: {"bytes": len(content.encode()), "source_sections": len({str(i.path) for i in source_sets[name]})}
+                  for name, content in docs.items()},
+        "total_unique_source_sections": len({str(i.path) for vals in source_sets.values() for i in vals}),
         "source_dump_modified": False,
     }
     return manifest

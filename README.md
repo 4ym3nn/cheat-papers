@@ -11,8 +11,9 @@ Operational penetration-testing runbooks for authorized labs, HTB/CPTS-style mac
 - [Ports and services](cheatsheets/PORTS.md)
 - [Shells and payloads](cheatsheets/SHELLS.md)
 - [File transfer](cheatsheets/FILE_TRANSFER.md)
+- [Documentation and reporting](cheatsheets/REPORTING.md)
 
-The runbooks are designed to be followed from top to bottom during a machine. Large files use searchable headers such as `[SUDO]`, `[SYSTEMD SERVICES]`, `[SEIMPERSONATE]`, `[LFI]`, `[XXE]`, and `[SSRF]`.
+The runbooks are designed to be followed from top to bottom during a machine. Large files use searchable headers such as `[SUDO]`, `[SYSTEMD SERVICES]`, `[SEIMPERSONATE]`, `[LFI]`, `[XXE]`, `[SSRF]`, and `[FINAL QA]`.
 
 ## Additional reference data
 
